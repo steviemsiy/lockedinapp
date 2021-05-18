@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 
-
 Future<String> fetchDistance() async {
   final response =
   await http.get(Uri.http('192.168.1.22:1880', 'front'));
@@ -22,16 +21,7 @@ Future<String> fetchDistance() async {
   }
 }
 
-Future<String> setupTimedFetch() {
-  Timer.periodic(Duration(milliseconds: 1000), (timer) {
-      try {
-        return fetchDistance();
-      }
-      catch (e) {
-        return "Error in Reaching Server";
-      }
-    });
-}
+
 
 void main() => runApp(MyApp());
 
@@ -44,19 +34,17 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   Future<String> futureDistance;
-
+  int current = -1, prev = -1;
   String messageTitle = "Empty";
   String notificationAlert = "alert";
 
   FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
 
   @override
-  void initState() {
+  Future<void> initState()  {
     super.initState();
 
-    futureDistance = setupTimedFetch();
-
-
+    setupTimedFetch();
 
     _firebaseMessaging.configure(
       onMessage: (message) async{
@@ -76,6 +64,14 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
+  setupTimedFetch() {
+    Timer.periodic(Duration(milliseconds: 1000), (timer) {
+      setState(() {
+        futureDistance = fetchDistance();
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -87,9 +83,10 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: Text('Locked In'),
         ),
-        body: Center(
-          child:
-          /*FutureBuilder<String>(
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+          FutureBuilder<String>(
             future: futureDistance,
             builder: (context, snapshot) {
               if (snapshot.hasData) {
@@ -97,26 +94,20 @@ class _MyAppState extends State<MyApp> {
               } else if (snapshot.hasError) {
                 return Text("${snapshot.error}");
               }
-
               // By default, show a loading spinner.
               return CircularProgressIndicator();
             },
-          ),*/
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Text(
-                  notificationAlert,
-                ),
-                Text(
-                  messageTitle,
-                  style: Theme.of(context).textTheme.headline4,
-                ),
-              ],
-            ),
+          ),
+          Text(
+            notificationAlert,
+          ),
+          Text(
+            messageTitle,
+            style: Theme.of(context).textTheme.headline4,
+          ),
+          ],
         ),
-
-      ),
-    );
+        ),
+      );
   }
 }
