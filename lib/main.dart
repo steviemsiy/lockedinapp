@@ -34,7 +34,8 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   Future<String> futureDistance;
-  int current = -1, prev = -1;
+  int current = -1, prev = -1, difference;
+  Text output;
   String messageTitle = "Empty";
   String notificationAlert = "alert";
 
@@ -72,6 +73,7 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -83,14 +85,24 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: Text('Locked In'),
         ),
-        body: Column(
+        body: Center (
+          child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
           FutureBuilder<String>(
             future: futureDistance,
             builder: (context, snapshot) {
               if (snapshot.hasData) {
-                return Text(snapshot.data);
+                //return Text(snapshot.data);
+                current = int.parse(snapshot.data);
+                difference = current - prev;
+                if (difference.abs() > 3 && prev != -1) {
+                 showDoorOpen(context);
+                } else {
+                  output = Text(snapshot.data);
+                }
+                prev = current;
+                return output;
               } else if (snapshot.hasError) {
                 return Text("${snapshot.error}");
               }
@@ -108,6 +120,37 @@ class _MyAppState extends State<MyApp> {
           ],
         ),
         ),
-      );
+      ),
+    );
+  }
+
+  showDoorOpen(BuildContext context) async {
+    await Future.delayed(Duration(microseconds: 2));
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('A DOOR HAS BEEN OPENED'),
+            content: SingleChildScrollView(
+              child: ListBody(
+                children: const <Widget>[
+                  Text('A door sensor has determined a door was opened in your house!'),
+                  Text('Was this you?'),
+                ],
+              ),
+            ),
+            actions: <Widget>[
+              FlatButton(
+                child: const Text('Yes'),
+                onPressed: () {
+                  Navigator.of(context, rootNavigator: true).pop('dialog');
+                },
+              ),
+              FlatButton(
+                  child: const Text('No')
+              ),
+            ],
+          );
+        });
   }
 }
