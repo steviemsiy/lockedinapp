@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "488699491099",
+    "project_id": "locked-in-7caf9",
+    "storage_bucket": "locked-in-7caf9.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:488699491099:android:a374339abaa3c38f7019be",
+        "android_client_info": {
+          "package_name": "com.example.locked_in_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "488699491099-gagbmkrt63de999ov5e8q2qlvgv4bjk9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCvyFQwELAFZE5z3JvNcd2AGzBrVkXSprU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "488699491099-gagbmkrt63de999ov5e8q2qlvgv4bjk9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
