@@ -41,7 +41,7 @@ android {
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         manifestPlaceholders = [
-                'appAuthRedirectScheme': 'demo://dev-63ucptcl.us.auth0.com/android/com.example.locked_in_app/callback'
+                'appAuthRedirectScheme': 'demo'
         ]
     }
 
