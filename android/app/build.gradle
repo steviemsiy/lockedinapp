@@ -36,10 +36,13 @@ android {
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId "com.example.locked_in_app"
-        minSdkVersion 16
-        targetSdkVersion 30
+        minSdkVersion 18
+        targetSdkVersion 28
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+        manifestPlaceholders = [
+                'appAuthRedirectScheme': 'demo://dev-63ucptcl.us.auth0.com/android/com.example.locked_in_app/callback'
+        ]
     }
 
     buildTypes {

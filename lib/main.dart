@@ -5,10 +5,28 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import 'package:flutter_appauth/flutter_appauth.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+final FlutterAppAuth appAuth = FlutterAppAuth();
+final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
+
+const AUTH0_DOMAIN = 'dev-63ucptcl.us.auth0.com';
+const AUTH0_CLIENT_ID = 'bZRHZKBibdWn5BI8PUxdefYGgUork0mF';
+
+const AUTH0_REDIRECT_URI = 'demo://dev-63ucptcl.us.auth0.com/android/com.example.locked_in_app/callback';
+const AUTH0_ISSUER = 'https://$AUTH0_DOMAIN';
+
+bool isLoggedIn = false;
+bool isNotSetup = true;
+bool isDoorOpen = false;
+bool isConfigured = false;
+
+String RPIP = '192.168.1.22:1880';
 
 Future<String> fetchDistance() async {
   final response =
-  await http.get(Uri.http('192.168.1.22:1880', 'front'));
+  await http.get(Uri.http(RPIP, 'front'));
 
   if (response.statusCode == 200) {
     // If the server did return a 200 OK response,
@@ -20,8 +38,6 @@ Future<String> fetchDistance() async {
     throw Exception('Failed to Access Sensor Data');
   }
 }
-
-
 
 void main() => runApp(MyApp());
 
@@ -38,6 +54,11 @@ class _MyAppState extends State<MyApp> {
   Text output;
   String messageTitle = "Empty";
   String notificationAlert = "alert";
+
+  bool isBusy = false;
+  bool isLoggedIn = false;
+  String errorMessage;
+
 
   FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
 
@@ -65,6 +86,52 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
+  Map<String, dynamic> parseIdToken(String idToken) {
+    final parts = idToken.split(r'.');
+    assert(parts.length == 3);
+
+    return jsonDecode(
+        utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))));
+  }
+
+  Future<void> loginAction() async {
+    setState(() {
+      isBusy = true;
+      errorMessage = '';
+    });
+
+    try {
+      final AuthorizationTokenResponse result =
+      await appAuth.authorizeAndExchangeCode(
+        AuthorizationTokenRequest(
+          AUTH0_CLIENT_ID,
+          AUTH0_REDIRECT_URI,
+          issuer: 'https://$AUTH0_DOMAIN',
+          scopes: ['openid', 'profile', 'offline_access'],
+          // promptValues: ['login']
+        ),
+      );
+
+      final idToken = parseIdToken(result.idToken);
+
+      await secureStorage.write(
+          key: 'refresh_token', value: result.refreshToken);
+
+      setState(() {
+        isBusy = false;
+        isLoggedIn = true;
+      });
+    } catch (e, s) {
+      print('login error: $e - stack: $s');
+
+      setState(() {
+        isBusy = false;
+        isLoggedIn = false;
+        errorMessage = e.toString();
+      });
+    }
+  }
+
   setupTimedFetch() {
     Timer.periodic(Duration(milliseconds: 1000), (timer) {
       setState(() {
@@ -86,27 +153,33 @@ class _MyAppState extends State<MyApp> {
           title: Text('Locked In'),
         ),
         body: Center (
-          child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-          FutureBuilder<String>(
-            future: futureDistance,
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                //return Text(snapshot.data);
-                current = int.parse(snapshot.data);
-                difference = current - prev;
-                if (difference.abs() > 3 && prev != -1) {
-                 showDoorOpen(context);
-                } else {
-                  output = Text(snapshot.data);
+          child: isBusy
+          ? CircularProgressIndicator()
+          :!isLoggedIn
+            ? Login(loginAction(), errorMessage)
+            : isNotSetup
+            ? Settings()
+              : Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+              FutureBuilder<String>(
+                future: futureDistance,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                  //return Text(snapshot.data);
+                  current = int.parse(snapshot.data);
+                  difference = current - prev;
+                  if (difference.abs() > 3 && prev != -1) {
+                   showDoorOpen(context);
+                  } else {
+                    output = Text(snapshot.data);
+                  }
+                  prev = current;
+                  return output;
+                } else if (snapshot.hasError) {
+                  return Text("${snapshot.error}");
                 }
-                prev = current;
-                return output;
-              } else if (snapshot.hasError) {
-                return Text("${snapshot.error}");
-              }
-              // By default, show a loading spinner.
+                // By default, show a loading spinner.
               return CircularProgressIndicator();
             },
           ),
@@ -147,10 +220,87 @@ class _MyAppState extends State<MyApp> {
                 },
               ),
               FlatButton(
-                  child: const Text('No')
+                  child: const Text('No'),
+                onPressed: () {
+                  Navigator.of(context, rootNavigator: true).pop('dialog');
+                    isDoorOpen = true;
+                },
               ),
             ],
           );
         });
+  }
+}
+
+class Login extends StatelessWidget {
+  final loginAction;
+  final String loginError;
+
+  const Login(this.loginAction, this.loginError);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        RaisedButton(
+          onPressed: () {
+            loginAction();
+          },
+          child: Text('Login'),
+        ),
+        Text(loginError ?? ''),
+      ],
+    );
+  }
+}
+
+class SecurityRecs extends StatelessWidget {
+   @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        Text('Our recommendation is to contact the Authorities or a neighbor to check in on your house.'),
+        RaisedButton(
+          child: const Text("Return"),
+          onPressed: () {
+            isDoorOpen = false;
+          },
+        )
+      ],
+    );
+  }
+}
+
+class Settings extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        TextFormField(
+          onChanged: (value) {
+            RPIP = value;
+          },
+          decoration: const InputDecoration(
+              labelText: 'Enter the IP address of the Raspberry Pi, including the Port the Node-RED server is running on:',
+              hintText: 'IP Address:Port'
+          ),
+          validator: (String value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter something';
+            }
+            return null;
+          },
+        ),
+        RaisedButton(
+          child: const Text('Save Settings'),
+          onPressed: () {
+            isNotSetup = false;
+          },
+        )
+      ]
+    );
   }
 }
