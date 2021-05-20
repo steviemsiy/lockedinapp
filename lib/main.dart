@@ -5,6 +5,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import 'package:intl/intl.dart';
+
 import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -23,7 +25,15 @@ bool isDoorOpen = false;
 bool isConfigured = false;
 bool isBusy = false;
 
-String RPIP = '192.168.1.22:1880';
+bool dialogShowing = false;
+
+const int ENTRIES = 5;
+
+int next = 0, total = 0;
+String fullList = '';
+List<String> lastEntries = new List(ENTRIES);
+
+String RPIP = ''; //'192.168.1.22:1880';
 
 Future<String> fetchDistance() async {
   final response =
@@ -53,10 +63,9 @@ class _MyAppState extends State<MyApp> {
   String errorMessage;
 
   @override
-  Future<void> initState()  {
+  void initState()  {
     initAction();
     super.initState();
-
   }
 
   void initAction() async {
@@ -93,6 +102,13 @@ class _MyAppState extends State<MyApp> {
     await secureStorage.delete(key: 'refresh_token');
     setState(() {
       isLoggedIn = false;
+      isBusy = false;
+    });
+  }
+
+  void saveSettings() async {
+    setState(() {
+      isNotSetup = false;
       isBusy = false;
     });
   }
@@ -155,50 +171,16 @@ class _MyAppState extends State<MyApp> {
           title: Text('Locked In'),
         ),
         body: Center (
-          child: isBusy
-          ? CircularProgressIndicator()
-          :!isLoggedIn
-            ? Login(loginAction(), errorMessage)
-              : isNotSetup
-              ? Settings()
-              : Sensor()
+            child: isBusy
+                ? CircularProgressIndicator()
+                :!isLoggedIn
+                ? Login(loginAction, errorMessage)
+                : isNotSetup
+                ? Settings(saveSettings)
+                : Sensor(logoutAction: logoutAction)
         ),
       ),
     );
-  }
-
-  showDoorOpen(BuildContext context) async {
-    await Future.delayed(Duration(microseconds: 2));
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('A DOOR HAS BEEN OPENED'),
-            content: SingleChildScrollView(
-              child: ListBody(
-                children: const <Widget>[
-                  Text('A door sensor has determined a door was opened in your house!'),
-                  Text('Was this you?'),
-                ],
-              ),
-            ),
-            actions: <Widget>[
-              FlatButton(
-                child: const Text('Yes'),
-                onPressed: () {
-                  Navigator.of(context, rootNavigator: true).pop('dialog');
-                },
-              ),
-              FlatButton(
-                  child: const Text('No'),
-                onPressed: () {
-                  Navigator.of(context, rootNavigator: true).pop('dialog');
-                    isDoorOpen = true;
-                },
-              ),
-            ],
-          );
-        });
   }
 }
 
@@ -226,7 +208,7 @@ class Login extends StatelessWidget {
 }
 
 class SecurityRecs extends StatelessWidget {
-   @override
+  @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -244,53 +226,75 @@ class SecurityRecs extends StatelessWidget {
 }
 
 class Settings extends StatelessWidget {
+  final saveSettings;
+
+  const Settings(this.saveSettings);
+
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        TextFormField(
-          onChanged: (value) {
-            RPIP = value;
-          },
-          decoration: const InputDecoration(
-              labelText: 'Enter the IP address of the Raspberry Pi',
-              hintText: 'IP Address:Port of Node-RED'
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          TextFormField(
+            onChanged: (value) {
+              RPIP = value;
+            },
+            decoration: const InputDecoration(
+                labelText: 'Enter the IP address of the Raspberry Pi',
+                hintText: 'IP Address:Port of Node-RED'
+            ),
+            validator: (String value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter something';
+              }
+              return null;
+            },
           ),
-          validator: (String value) {
-            if (value == null || value.isEmpty) {
-              return 'Please enter something';
-            }
-            return null;
-          },
-        ),
-        RaisedButton(
-          child: const Text('Save Settings'),
-          onPressed: () {
-            isNotSetup = false;
-          },
-        )
-      ]
+          RaisedButton(
+            child: const Text('Save Settings'),
+            onPressed: () {
+              saveSettings();
+            },
+          )
+        ]
     );
   }
 }
 
 class Sensor extends StatefulWidget {
-  Sensor({Key key}) : super(key: key);
+  final logoutAction;
+
+  //const Sensor(this.logoutAction);
+
+  Sensor({Key key, this.logoutAction}) : super(key: key);
 
   @override
-  _SensorState createState() => _SensorState();
+  _SensorState createState() => _SensorState(key, logoutAction);
 }
 
-class _SensorState extends State<MyApp> {
+class _SensorState extends State<Sensor> {
+  final passkey;
+  final logoutAction;
+
+  _SensorState(this.passkey, this.logoutAction);
+
   Future<String> futureDistance;
   int current = -1,
       prev = -1,
       difference;
   Text output;
-  String messageTitle = "Empty";
-  String notificationAlert = "alert";
+  String proximity;
+  Text proxStatus;
+  String messageTitle = "";
+  String notificationAlert = "An alert will appear when a Door Opens";
   String errorMessage;
+  String totalOutput;
+  Text display;
+
+  /*int oldest = 0;
+  int newest = -1;
+  bool firstFive = true;*/
+
 
   FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
 
@@ -320,8 +324,15 @@ class _SensorState extends State<MyApp> {
 
   setupTimedFetch() {
     Timer.periodic(Duration(milliseconds: 1000), (timer) {
+      if(!isLoggedIn){
+        timer.cancel();
+      }
       setState(() {
-        futureDistance = fetchDistance();
+        if (!dialogShowing) {
+          futureDistance = fetchDistance();
+        }
+        notificationAlert = "Five Most Recent Entries";
+        messageTitle = fullList;
       });
     });
   }
@@ -329,85 +340,123 @@ class _SensorState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Locked In',
-      theme: ThemeData(
-        primarySwatch: Colors.blueGrey,
-      ),
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text('Locked In'),
-        ),
-        body: Center (
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              FutureBuilder<String>(
-                future: futureDistance,
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    //return Text(snapshot.data);
-                    current = int.parse(snapshot.data);
-                    difference = current - prev;
-                    if (difference.abs() > 3 && prev != -1) {
-                      showDoorOpen(context);
-                    } else {
-                      output = Text(snapshot.data);
-                    }
-                    prev = current;
-                    return output;
-                  } else if (snapshot.hasError) {
-                    return Text("${snapshot.error}");
+    return Center (
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          FutureBuilder<String>(
+            future: futureDistance,
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                //return Text(snapshot.data);
+                current = int.parse(snapshot.data);
+                difference = current - prev;
+                if (difference.abs() > 3 && prev != -1) {
+                  dialogShowing = true;
+                  showDoorOpen(context);
+                  if (isDoorOpen) {
+                    //notificationAlert = "A door has been opened!";
+                    messageTitle = fullList;
+                    isDoorOpen = false;
                   }
-                  // By default, show a loading spinner.
-                  return CircularProgressIndicator();
-                },
-              ),
-              Text(
-                notificationAlert,
-              ),
-              Text(
-                messageTitle,
-                style: Theme.of(context).textTheme.headline4,
-              ),
-            ],
+                } else {
+                  //notificationAlert = "An alert will appear when a Door Opens";
+                  //messageTitle = "";
+
+                  totalOutput = "Total Entries: " + total.toString() + "\n";
+
+                  //output = Text(totalOutput, style: Theme.of(context).textTheme.headline4);
+
+                  proximity = "Proximity Status: " + snapshot.data + "\n";
+                  //proxStatus = Text(proximity, style: Theme.of(context).textTheme.headline4);
+                } // + '\n' + messageTitle);
+
+                prev = current;
+                output = Text(proximity + totalOutput,
+                    style: Theme.of(context).textTheme.headline4
+                );
+                return output;
+              } else if (snapshot.hasError) {
+                return Text("${snapshot.error}");
+              }
+              // By default, show a loading spinner.
+              return CircularProgressIndicator();
+            },
           ),
-        ),
+          Text(
+            notificationAlert,
+            style: Theme.of(context).textTheme.headline5,
+
+          ),
+          Text(
+            messageTitle,
+            style: Theme.of(context).textTheme.headline5,
+          ),
+          RaisedButton(
+              onPressed: () {
+                logoutAction();
+              },
+              child: const Text("Logout")
+          ),
+        ],
       ),
     );
   }
-
-  showDoorOpen(BuildContext context) async {
-    await Future.delayed(Duration(microseconds: 2));
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('A DOOR HAS BEEN OPENED'),
-            content: SingleChildScrollView(
-              child: ListBody(
-                children: const <Widget>[
-                  Text('A door sensor has determined a door was opened in your house!'),
-                  Text('Was this you?'),
-                ],
-              ),
-            ),
-            actions: <Widget>[
-              FlatButton(
-                child: const Text('Yes'),
-                onPressed: () {
-                  Navigator.of(context, rootNavigator: true).pop('dialog');
-                },
-              ),
-              FlatButton(
-                child: const Text('No'),
-                onPressed: () {
-                  Navigator.of(context, rootNavigator: true).pop('dialog');
-                  isDoorOpen = true;
-                },
-              ),
-            ],
-          );
-        });
-  }
 }
+
+showDoorOpen(BuildContext context) async {
+  await Future.delayed(Duration(microseconds: 2));
+  showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('A DOOR HAS BEEN OPENED'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: const <Widget>[
+                Text('A door sensor has determined a door was opened in your house!'),
+                Text('Was this you?'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            FlatButton(
+              child: const Text('Yes'),
+              onPressed: () {
+                dialogShowing = false;
+                Navigator.of(context, rootNavigator: true).pop('dialog');
+              },
+            ),
+            FlatButton(
+              child: const Text('No'),
+              onPressed: () {
+                lastEntries[next] =
+                    DateFormat('MM/dd/yyyy hh:mm:ss').format(
+                        DateTime.now());
+                total++;
+                next = (next + 1) % ENTRIES;
+                fullList = "";
+                if (total < 5) {
+                  for (int i = 0; i < next; i++) {
+                    fullList = fullList + lastEntries[i] + "\n";
+                  }
+                } else {
+                  int j = next;
+                  int printed = 0;
+                  while (printed < ENTRIES) {
+                    fullList = fullList + lastEntries[j] + "\n";
+                    j = (j + 1) % ENTRIES;
+                    printed++;
+                  }
+                }
+                isDoorOpen = true;
+                dialogShowing = false;
+
+                Navigator.of(context, rootNavigator: true).pop('dialog');
+              },
+            ),
+          ],
+        );
+      });
+}
+
