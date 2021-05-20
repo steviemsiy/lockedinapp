@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:intl/intl.dart';
@@ -34,10 +35,13 @@ String fullList = '';
 List<String> lastEntries = new List(ENTRIES);
 
 String RPIP = ''; //'192.168.1.22:1880';
+String port = '';
+String redirect = '';
 
 Future<String> fetchDistance() async {
+  String nrURL = RPIP + ":" + port;
   final response =
-  await http.get(Uri.http(RPIP, 'front'));
+  await http.get(Uri.http(nrURL, redirect));
 
   if (response.statusCode == 200) {
     // If the server did return a 200 OK response,
@@ -176,7 +180,7 @@ class _MyAppState extends State<MyApp> {
                 :!isLoggedIn
                 ? Login(loginAction, errorMessage)
                 : isNotSetup
-                ? Settings(saveSettings)
+                ? Settings(saveSettings: saveSettings)
                 : Sensor(logoutAction: logoutAction)
         ),
       ),
@@ -225,38 +229,95 @@ class SecurityRecs extends StatelessWidget {
   }
 }
 
-class Settings extends StatelessWidget {
+class Settings extends StatefulWidget {
+  final saveSettings;
+  //const Sensor(this.logoutAction);
+
+  Settings({Key key, this.saveSettings}) : super(key: key);
+
+  @override
+  _SettingsState createState() => _SettingsState(key, saveSettings);
+}
+
+class _SettingsState extends State<Settings> {
+  final passKey;
   final saveSettings;
 
-  const Settings(this.saveSettings);
+  _SettingsState(this.passKey, this.saveSettings);
+
+  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          TextFormField(
-            onChanged: (value) {
-              RPIP = value;
-            },
-            decoration: const InputDecoration(
-                labelText: 'Enter the IP address of the Raspberry Pi',
-                hintText: 'IP Address:Port of Node-RED'
+    return Form(
+      key: _formKey,
+      child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            TextFormField(
+              onChanged: (value) {
+                RPIP = value;
+              },
+              decoration: const InputDecoration(
+                  labelText: 'Enter the IP address of the Raspberry Pi',
+                  hintText: '127.0.0.1'
+              ),
+              validator: (String value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter something';
+                } else if (!value.contains(".")){
+                  return 'Please enter a valid URL';
+                }
+                return null;
+              },
             ),
-            validator: (String value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter something';
-              }
-              return null;
-            },
-          ),
-          RaisedButton(
-            child: const Text('Save Settings'),
-            onPressed: () {
-              saveSettings();
-            },
-          )
-        ]
+            TextFormField(
+              onChanged: (value) {
+                port = value;
+              },
+              decoration: const InputDecoration(
+                labelText: 'Enter the Port Node-RED is running on: ',
+                hintText: '1880'
+              ),
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              validator: (String value) {
+                final isDigitsOnly = int.tryParse(value);
+                if (value == null || value.isEmpty) {
+                  return 'Please enter something';
+                }
+                return null;
+              },
+            ),
+            TextFormField(
+              onChanged: (value) {
+                redirect = value;
+              },
+              decoration: const InputDecoration(
+                  labelText: 'Enter the directory specified on Node-RED: ',
+                  hintText: '/front'
+              ),
+              validator: (String value) {
+                final isDigitsOnly = int.tryParse(value);
+                if (value == null || value.isEmpty) {
+                  return 'Please enter something';
+                }
+                return null;
+              },
+            ),
+            RaisedButton(
+              child: const Text('Save Settings'),
+              onPressed: () {
+                if (_formKey.currentState.validate()) {
+                  // If the form is valid, display a snackbar. In the real world,
+                  // you'd often call a server or save the information in a database.
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text('Configuration Complete')));
+                  saveSettings();
+                }
+              },
+            )
+          ]
+      ),
     );
   }
 }
