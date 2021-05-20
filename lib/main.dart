@@ -36,12 +36,12 @@ List<String> lastEntries = new List(ENTRIES);
 
 String RPIP = ''; //'192.168.1.22:1880';
 String port = '';
-String redirect = '';
+String route = '';
 
 Future<String> fetchDistance() async {
   String nrURL = RPIP + ":" + port;
   final response =
-  await http.get(Uri.http(nrURL, redirect));
+  await http.get(Uri.http(nrURL, route));
 
   if (response.statusCode == 200) {
     // If the server did return a 200 OK response,
@@ -290,7 +290,7 @@ class _SettingsState extends State<Settings> {
             ),
             TextFormField(
               onChanged: (value) {
-                redirect = value;
+                route = value;
               },
               decoration: const InputDecoration(
                   labelText: 'Enter the directory specified on Node-RED: ',
@@ -300,6 +300,8 @@ class _SettingsState extends State<Settings> {
                 final isDigitsOnly = int.tryParse(value);
                 if (value == null || value.isEmpty) {
                   return 'Please enter something';
+                } else if (!value.contains("/")){
+                  return 'Please enter the valid custom setting from Node-RED';
                 }
                 return null;
               },
