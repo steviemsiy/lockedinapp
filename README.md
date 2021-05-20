@@ -1,5 +1,4 @@
-# Project Repo Name
-Locked In
+# Locked In
 
 ## Executive Summary
 The home is many things, but above all it is the place we keep the mementos and objects that make life worth living. Loved ones, expensive devices and appliances, irreplaceable memories… These make up the most essential and important objects in life, and as much as we wish we could guarantee the safety and security of these pieces of our lives, there are great risks to the things we hold nearest our hearts. At some point the home must be left unattended. The goal of Locked In is to create a place to give homeowners peace of mind in leaving their residence, providing a minimalistic defense implementation that will take a monumental step toward protecting the home.
