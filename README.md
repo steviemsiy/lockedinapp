@@ -67,9 +67,9 @@ Text describing high level diagram with red or other callouts identifying proble
 
 | Component name | Category of vulnerability | Issue Description | Mitigation |
 |----------------|---------------------------|-------------------|------------|
-1 | Component 3.1 > Component 2 Alert System to Node-RED Server | Man-in-the-Middle Attack | The HTTP request made by the mobile app to the Node-RED server is through the HTTP protocol instead of using the HTTPS protocol that has the added security of a TLS handshake, so attacker can intercept data not assumed to be known to anyone but the user. | Retrieve a certificate to be able to protect accesses to the Node-RED server. |
-2 | Component 3.2 Settings Widget | Wrong Information Exception | This widget will rely on user input to set the exact IP address to fetch user data from, and could cause fatal issues within the application. | Include some validation code to ensure that a valid IP is included. |
-3 | Component 3.3 > Component 4 Single Sign-on / Login Widget to Auth0 | Man in the Middle Attack | Again the HTTP request is in danger as it is actively reaching out into the internet, but this time this vulnerability is just to ensure the TLS handshake is occurring through Auth0 and no user information is visible. | Double check the packets are protected. |
+| Component 3.1 > Component 2 Alert System to Node-RED Server | Man-in-the-Middle Attack | The HTTP request made by the mobile app to the Node-RED server is through the HTTP protocol instead of using the HTTPS protocol that has the added security of a TLS handshake, so attacker can intercept data not assumed to be known to anyone but the user. | Retrieve a certificate to be able to protect accesses to the Node-RED server. |
+| Component 3.2 Settings Widget | Wrong Information Exception | This widget will rely on user input to set the exact IP address to fetch user data from, and could cause fatal issues within the application. | Include some validation code to ensure that a valid IP is included. |
+| Component 3.3 > Component 4 Single Sign-on / Login Widget to Auth0 | Man in the Middle Attack | Again the HTTP request is in danger as it is actively reaching out into the internet, but this time this vulnerability is just to ensure the TLS handshake is occurring through Auth0 and no user information is visible. | Double check the packets are protected. |
 
 
 
