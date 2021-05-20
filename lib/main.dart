@@ -344,6 +344,9 @@ class _SensorState extends State<Sensor> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
+          Text("Front Door Sensor\n",
+              style: Theme.of(context).textTheme.headline3
+          ),
           FutureBuilder<String>(
             future: futureDistance,
             builder: (context, snapshot) {
@@ -367,13 +370,13 @@ class _SensorState extends State<Sensor> {
 
                   //output = Text(totalOutput, style: Theme.of(context).textTheme.headline4);
 
-                  proximity = "Proximity Status: " + snapshot.data + "\n";
+                  proximity = "Proximity to Door: " + snapshot.data + " cm\n";
                   //proxStatus = Text(proximity, style: Theme.of(context).textTheme.headline4);
                 } // + '\n' + messageTitle);
 
                 prev = current;
                 output = Text(proximity + totalOutput,
-                    style: Theme.of(context).textTheme.headline4
+                    style: Theme.of(context).textTheme.headline5
                 );
                 return output;
               } else if (snapshot.hasError) {
