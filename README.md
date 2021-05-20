@@ -16,20 +16,24 @@ A world where the home is more secure is clearly one that benefits society. This
 
 ## User stories
 As a homeowner, I want to secure the entrances to my household so that I know when an entrance is used.
+
 **Acceptance Criteria:**
 * Given I have set up the device at an entrance, when the entrance is used then an alert will be sent to the user’s device stating which one and when
 
 As a homeowner, I want to know the exact times an entrance is used so that I can create a timeline of when my house was robbed.
+
 **Acceptance Criteria**
 * Given that a door has been used, when the alert comes up, then the user will be prompted to record the entrance usage or confirm that it was authorized.
 
 ## Misuser stories
 As a home burglar that is aware the system is in place, I want trick the system into believing nothing is happening by holding something in front of the sensor so that I can enter the home without notifying the owner.
+
 **Mitigations**
 * The accepted error of the motion sensor will be limited to 3 centimeters, a small enough value that it will be difficult to fool.
 * Device will be installed on the inside so that no outsider can meddle with it.
 
 As a burglar, I want to bypass the security system by opening and closing the door between sensor data fetches.
+
 **Mitigations**
 * The application will fetch the latest read every second, not enough time to open a door, sneak in, and close the door without tripping the alert to the app.
 
@@ -62,7 +66,6 @@ This feature will allow a specific account to be associated with a device and sa
 This component hosts a user database for the Locked In app, allowing users to login and see the log of most recent entries.
 
 ## Security analysis
-Text describing high level diagram with red or other callouts identifying problem points or attacks.
 ![Tooltip for visually disabled](./HighDesignLockedInSA.jpg)
 
 | Component name | Category of vulnerability | Issue Description | Mitigation |
