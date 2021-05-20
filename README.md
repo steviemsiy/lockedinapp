@@ -63,7 +63,7 @@ This component hosts a user database for the Locked In app, allowing users to lo
 
 ## Security analysis
 Text describing high level diagram with red or other callouts identifying problem points or attacks.
-![Tooltip for visually disabled](./HighLevelDesignLockedInSA.jpg)
+![Tooltip for visually disabled](./HighDesignLockedInSA.jpg)
 
 | Component name | Category of vulnerability | Issue Description | Mitigation |
 |----------------|---------------------------|-------------------|------------|
