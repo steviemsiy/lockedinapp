@@ -82,9 +82,8 @@ This component hosts a user database for the Locked In app, allowing users to lo
 2. Acquire Raspberry Pi 3 B+ Model (with OS installed on MicroSD) and HC-SR04 Ultrasonic Distance Sensor Module.
 3. Install the Pi and Sensor within close range of the entry to be monitored. It is recommended that the sensor be entirely stationary and within a close proximity to the door to get best results.
 4. Power on Raspberry Pi and follow: https://learn.adafruit.com/raspberry-pi-hosting-node-red/. Note the port that is chosen to Run Node-RED and the IP address of the Pi.
-5. Access the Node-RED server and customize the flow to match 
-![Tooltip for visually disabled](./nrFlow.jpg) 
-Save the above text as a .json file (or download flows.json from the SubmissionMetadata folder repository) and import into Node-RED. Take note of the entry for URL within the ‘http in’ node.
+5. Access the Node-RED server and import the flows.json file form the SubmissionMetadata folder of this repository. It should look like this:
+![Tooltip for visually disabled](./nrFlow.jpg) Take note of the URL entry of the 'http in' node.
 6. Open the app, login to Auth0, enter the configurations that YOU customized: Pi IP address, Port of the Node-RED server, and the route that was noted last step. 
 7. Attain peace of mind as the Entryway is now under constant watch through Locked In!
 
