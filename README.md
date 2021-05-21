@@ -75,7 +75,7 @@ This component hosts a user database for the Locked In app, allowing users to lo
 
 ## Installation Instructions
 1. Download the app-release.apk file from this repository.
-2. Open the Application.
+2. Open the downloaded file.
 
 ## Getting Started
 1. Download the Application (app-release.apk).
