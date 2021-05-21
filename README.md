@@ -74,7 +74,7 @@ This component hosts a user database for the Locked In app, allowing users to lo
 | Component 3.3 > Component 4 Single Sign-on / Login Widget to Auth0 | Man in the Middle Attack | Again the HTTP request is in danger as it is actively reaching out into the internet, but this time this vulnerability is just to ensure the TLS handshake is occurring through Auth0 and no user information is visible. | Double check the packets are protected. |
 
 ## Installation Instructions
-1. Download the app-release.apk file from this repository.
+1. Download the app-release.apk file from https://github.com/steviemsiy/lockedinapp/releases/tag/1.0.
 2. Open the downloaded file.
 
 ## Getting Started
