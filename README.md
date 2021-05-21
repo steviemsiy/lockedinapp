@@ -73,5 +73,19 @@ This component hosts a user database for the Locked In app, allowing users to lo
 | Component 3.2 Settings Widget | Wrong Information Exception | This widget will rely on user input to set the exact IP address to fetch user data from, and could cause fatal issues within the application. | Include some validation code to ensure that a valid IP is included. |
 | Component 3.3 > Component 4 Single Sign-on / Login Widget to Auth0 | Man in the Middle Attack | Again the HTTP request is in danger as it is actively reaching out into the internet, but this time this vulnerability is just to ensure the TLS handshake is occurring through Auth0 and no user information is visible. | Double check the packets are protected. |
 
+## Installation Instructions
+1. Download the app-release.apk file from this repository.
+## Getting Started
+1. Download the Application (app-release.apk).
+2. Acquire Raspberry Pi 3 B+ Model (with OS installed on MicroSD) and HC-SR04 Ultrasonic Distance Sensor Module.
+3. Install the Pi and Sensor within close range of the entry to be monitored. It is recommended that the sensor be entirely stationary and within a close proximity to the door to get best results.
+4. Power on Raspberry Pi and follow: https://learn.adafruit.com/raspberry-pi-hosting-node-red/. Note the port that is chosen to Run Node-RED and the IP address of the Pi.
+5. Access the Node-RED server and customize the flow to match 
+	 ![Tooltip for visually disabled](./nrFlow.jpg)
+[{"id":"a8443d1a.19786","type":"tab","label":"Door Sensor","disabled":false,"info":""},{"id":"68873712.62f898","type":"rpi-srf","z":"a8443d1a.19786","name":"","topic":"SRF","pulse":"1","pins":"16,18","x":490,"y":600,"wires":[["d11ada1c.681498"]]},{"id":"6459e1d4.c4349","type":"http in","z":"a8443d1a.19786","name":"FrontDoor","url":"/front","method":"get","upload":false,"swaggerDoc":"","x":500,"y":480,"wires":[["4ece0296.78976c"]]},{"id":"8e3cc6ed.8de1a8","type":"http response","z":"a8443d1a.19786","name":"","statusCode":"200","headers":{"content-type":"application/json"},"x":900,"y":460,"wires":[]},{"id":"f4bcc2b9.8a4ca","type":"debug","z":"a8443d1a.19786","name":"","active":true,"tosidebar":true,"console":false,"tostatus":false,"complete":"true","targetType":"full","statusVal":"","statusType":"auto","x":870,"y":580,"wires":[]},{"id":"d11ada1c.681498","type":"function","z":"a8443d1a.19786","name":"Update Distance","func":"global.set('distance', msg.payload);\nreturn msg;","outputs":1,"noerr":0,"initialize":"","finalize":"","libs":[],"x":700,"y":580,"wires":[["f4bcc2b9.8a4ca"]]},{"id":"4ece0296.78976c","type":"function","z":"a8443d1a.19786","name":"Get distance","func":"var dist = global.get('distance');\nmsg.payload = dist;\nreturn msg;","outputs":1,"noerr":0,"initialize":"","finalize":"","libs":[],"x":720,"y":480,"wires":[["8e3cc6ed.8de1a8"]]}]
+
+Save the above text as a .json file (or download flows.json from the SubmissionMetadata folder repository) and import into Node-RED. Take note of the entry for URL within the ‘http in’ node.
+6. Open the app, login to Auth0, enter the configurations that YOU customized: Pi IP address, Port of the Node-RED server, and the route that was noted last step. 
+7. Attain peace of mind as the Entryway is now under constant watch through Locked In!
 
 
